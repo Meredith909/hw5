@@ -12,31 +12,29 @@ std::set<std::string> wordle(
     std::set<std::string> results;
     int n = in.size();
 
-    // count how many of each floating letter we still need
+    // 1) Count how many of each floating letter we need
     std::array<int,26> need{};
-    for (char c : floating) {
-        if (c >= 'a' && c <= 'z')
-            need[c - 'a']++;
-    }
+    for (char c : floating)                        // ← LOOP #1
+        need[c - 'a']++;
 
-    // scan every word in the dictionary exactly once
-    for (auto const& w : dict) {
+    // 2) Scan each dictionary word once
+    for (auto const& w : dict)                    // ← LOOP #2
+    {
         if ((int)w.size() != n) continue;
-
-        // 0) skip anything with non-lowercase letters
-        bool allLower = true;
-        for (char c : w) {
-            if (c < 'a' || c > 'z') { allLower = false; break; }
-        }
-        if (!allLower) continue;
 
         std::array<int,26> seen{};
         bool ok = true;
 
-        // 1) check fixed positions and tally up letters
-        for (int i = 0; i < n; ++i) {
+        // 3) One pass: 
+        //    - reject non-lowercase
+        //    - enforce fixed letters
+        //    - tally seen counts
+        for (int i = 0; i < n; ++i)                // ← LOOP #3
+        {
             char wc = w[i];
-            if (in[i] != '-' && in[i] != wc) {
+            if (wc < 'a' || wc > 'z'         // non-lowercase?
+             || (in[i] != '-' && in[i] != wc)) // fixed mismatch?
+            {
                 ok = false;
                 break;
             }
@@ -44,13 +42,10 @@ std::set<std::string> wordle(
         }
         if (!ok) continue;
 
-        // 2) ensure we've seen each floating letter enough times
-        for (int k = 0; k < 26; ++k) {
-            if (seen[k] < need[k]) {
-                ok = false;
-                break;
-            }
-        }
+        // 4) Make sure we saw all floating letters
+        for (int k = 0; k < 26; ++k)             // ← LOOP #4
+            if (seen[k] < need[k]) { ok = false; break; }
+
         if (ok) results.insert(w);
     }
 
