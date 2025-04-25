@@ -2,32 +2,37 @@
 
 using namespace std;
 
-void generate(string& current, size_t pos, string float_copy, int open_count, const set<string>& dict, set<string>& result) {
-    if (float_copy.size() > open_count) {
-        return;
-    }
+void generate(string& current, size_t pos, const string& floating, unsigned used_floats, 
+              int floats_left, int open_count, const set<string>& dict, set<string>& result) {
+    if (floats_left > open_count) return;
 
     if (pos == current.size()) {
-        if (float_copy.empty() && dict.count(current)) {
+        if (floats_left == 0 && dict.count(current)) {
             result.insert(current);
         }
         return;
     }
 
     if (current[pos] != '-') {
-        generate(current, pos + 1, float_copy, open_count, dict, result);
+        generate(current, pos + 1, floating, used_floats, floats_left, open_count, dict, result);
         return;
     }
 
     for (char c = 'a'; c <= 'z'; c++) {
         current[pos] = c;
-        size_t found = float_copy.find(c);
-        if (found != string::npos) {
-            string new_float = float_copy;
-            new_float.erase(found, 1);
-            generate(current, pos + 1, new_float, open_count - 1, dict, result);
-        } else {
-            generate(current, pos + 1, float_copy, open_count - 1, dict, result);
+        bool used_float = false;
+        
+        for (size_t i = 0; i < floating.size(); i++) {
+            if (!(used_floats & (1 << i)) && floating[i] == c) {
+                generate(current, pos + 1, floating, used_floats | (1 << i), 
+                        floats_left - 1, open_count - 1, dict, result);
+                used_float = true;
+                break;
+            }
+        }
+        
+        if (!used_float) {
+            generate(current, pos + 1, floating, used_floats, floats_left, open_count - 1, dict, result);
         }
     }
     current[pos] = '-';
@@ -36,8 +41,9 @@ void generate(string& current, size_t pos, string float_copy, int open_count, co
 set<string> wordle(const string& in, const string& floating, const set<string>& dict) {
     set<string> result;
     string current = in;
-    string float_copy = floating;
     int open_count = 0;
+    unsigned used_floats = 0;
+    int floats_left = floating.size();
 
     for (size_t i = 0; i < in.size(); i++) {
         if (in[i] == '-') {
@@ -45,6 +51,6 @@ set<string> wordle(const string& in, const string& floating, const set<string>& 
         } 
     }
 
-    generate(current, 0, float_copy, open_count, dict, result);
+    generate(current, 0, floating, used_floats, floats_left, open_count, dict, result);
     return result;
 }
