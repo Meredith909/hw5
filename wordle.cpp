@@ -2,54 +2,51 @@
 #include <set>
 #include <string>
 
-// Ensure the candidate contains only lowercase letters
-bool isAllLowercase(const std::string& word) {
-    for(char c : word) {
-        if(c < 'a' || c > 'z') return false;
+using namespace std;
+
+void generate(string& current, size_t pos, string float_copy, int open_count, const set<string>& dict, set<string>& result) {
+    if (float_copy.size() > open_count) {
+        return;
     }
-    return true;
+
+    if (pos == current.size()) {
+        if (float_copy.empty() && dict.count(current)) {
+            result.insert(current);
+        }
+        return;
+    }
+
+    if (current[pos] != '-') {
+        generate(current, pos + 1, float_copy, open_count, dict, result);
+        return;
+    }
+
+    for (char c = 'a'; c <= 'z'; c++) {
+        current[pos] = c;
+        size_t found = float_copy.find(c);
+        if (found != string::npos) {
+            string new_float = float_copy;
+            new_float.erase(found, 1);
+            generate(current, pos + 1, new_float, open_count - 1, dict, result);
+        } else {
+            generate(current, pos + 1, float_copy, open_count - 1, dict, result);
+        }
+    }
+    current[pos] = '-';
 }
 
-bool isValidCandidate(const std::string& pattern, std::string floatLetters, const std::string& candidate) {
-    for(size_t i = 0; i < pattern.size(); ++i) {
-        if(pattern[i] != '-' && candidate[i] != pattern[i]) {
-            return false;
-        }
-        if(pattern[i] == '-') {
-            auto it = floatLetters.find(candidate[i]);
-            if(it != std::string::npos) {
-                floatLetters.erase(it, 1);
-            }
-        }
-    }
-    return floatLetters.empty();
-}
+set<string> wordle(const string& in, const string& floating, const set<string>& dict) {
+    set<string> result;
+    string current = in;
+    string float_copy = floating;
+    int open_count = 0;
 
-std::set<std::string> wordle(
-    const std::string& pattern,
-    const std::string& floating,
-    const std::set<std::string>& dict)
-{
-    std::set<std::string> results;
-
-    int numDashes = 0;
-    for(char c : pattern) {
-        if(c == '-') numDashes++;
+    for (size_t i = 0; i < in.size(); i++) {
+        if (in[i] == '-') {
+            open_count++;
+        } 
     }
 
-    if(floating.size() > numDashes) {
-        return results;
-    }
-
-    for(const std::string& word : dict) {
-        if(word.length() != pattern.length()) continue;
-        if(!isAllLowercase(word)) continue;
-
-        std::string floatCopy = floating;
-        if(isValidCandidate(pattern, floatCopy, word)) {
-            results.insert(word);
-        }
-    }
-
-    return results;
+    generate(current, 0, float_copy, open_count, dict, result);
+    return result;
 }
