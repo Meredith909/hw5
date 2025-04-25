@@ -1,64 +1,55 @@
 #include "wordle.h"
-#include "dict-eng.h"
 #include <set>
-#include <map>
 #include <string>
 
-using namespace std;
-
-void generateWords(
-    const string& in,
-    const map<char, int>& floatCounts,
-    const set<string>& dict,
-    string& current,
-    int pos,
-    set<string>& results,
-    map<char, int>& currCounts
-) {
-    if (pos == in.size()) {
-        // Check if all floating letters are present
-        for (const auto& pair : floatCounts) {
-            if (currCounts[pair.first] < pair.second) return;
-        }
-        if (dict.find(current) != dict.end()) {
-            results.insert(current);
-        }
-        return;
+// Ensure the candidate contains only lowercase letters
+bool isAllLowercase(const std::string& word) {
+    for(char c : word) {
+        if(c < 'a' || c > 'z') return false;
     }
-
-    // Handle fixed characters
-    if (in[pos] != '-') {
-        char c = in[pos];
-        current.push_back(c);
-        currCounts[c]++;
-        generateWords(in, floatCounts, dict, current, pos + 1, results, currCounts);
-        currCounts[c]--;
-        current.pop_back();
-    } else {
-        // Try all possible characters (loop occurs here)
-        for (char c = 'a'; c <= 'z'; ++c) {
-            current.push_back(c);
-            currCounts[c]++;
-            generateWords(in, floatCounts, dict, current, pos + 1, results, currCounts);
-            currCounts[c]--;
-            current.pop_back();
-        }
-    }
+    return true;
 }
 
-set<string> wordle(
-    const string& in,
-    const string& floating,
-    const set<string>& dict
-) {
-    set<string> results;
-    map<char, int> floatCounts;
-    for (char c : floating) {
-        floatCounts[c]++;
+bool isValidCandidate(const std::string& pattern, std::string floatLetters, const std::string& candidate) {
+    for(size_t i = 0; i < pattern.size(); ++i) {
+        if(pattern[i] != '-' && candidate[i] != pattern[i]) {
+            return false;
+        }
+        if(pattern[i] == '-') {
+            auto it = floatLetters.find(candidate[i]);
+            if(it != std::string::npos) {
+                floatLetters.erase(it, 1);
+            }
+        }
+    }
+    return floatLetters.empty();
+}
+
+std::set<std::string> wordle(
+    const std::string& pattern,
+    const std::string& floating,
+    const std::set<std::string>& dict)
+{
+    std::set<std::string> results;
+
+    int numDashes = 0;
+    for(char c : pattern) {
+        if(c == '-') numDashes++;
     }
 
-    string current;
-    map<char, int> currCounts;
-    generateWords(in, floatCounts, dict, current, 0, results, currCounts);
+    if(floating.size() > numDashes) {
+        return results;
+    }
+
+    for(const std::string& word : dict) {
+        if(word.length() != pattern.length()) continue;
+        if(!isAllLowercase(word)) continue;
+
+        std::string floatCopy = floating;
+        if(isValidCandidate(pattern, floatCopy, word)) {
+            results.insert(word);
+        }
+    }
+
     return results;
 }
