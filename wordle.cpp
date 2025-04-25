@@ -1,6 +1,5 @@
 #include "wordle.h"
 
-
 using namespace std;
 
 void generate(string& current, size_t pos, string float_copy, int open_count, const set<string>& dict, set<string>& result) {
