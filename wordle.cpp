@@ -1,6 +1,5 @@
 #include "wordle.h"
 #include <set>
-#include <string>
 
 using namespace std;
 
